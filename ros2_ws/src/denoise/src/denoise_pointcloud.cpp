@@ -31,7 +31,7 @@ class Denoise : public rclcpp::Node
         {
 
             pointcloud_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-                "/transformed_pointcloud_data", 10,
+                "/realsense/points", 10,
                 std::bind(&Denoise::denoise_callback, this, std::placeholders::_1));
 
             denoised_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/denoised_pointcloud_data", 10);
@@ -47,10 +47,17 @@ class Denoise : public rclcpp::Node
             
             
             // implement denoise and downsampling here
+                    // Create the PassThrough filter object
+            pcl::PassThrough<pcl::PointXYZ> pass;
+            pass.setInputCloud(cloud);
+            pass.setFilterFieldName("z");  // Filter along the z-axis, change if necessary
+            pass.setFilterLimits(0.0, 1.0); // Set your desired limits for filtering
+            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>());
+            pass.filter(*cloud_filtered);
 
             // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
             sensor_msgs::msg::PointCloud2 denoised_cloud_msg;
-            pcl::toROSMsg(*cloud, denoised_cloud_msg);
+            pcl::toROSMsg(*cloud_filtered, denoised_cloud_msg);
             denoised_cloud_msg.header.frame_id = "world";
             denoised_cloud_msg.header.stamp = this->get_clock()->now();
 

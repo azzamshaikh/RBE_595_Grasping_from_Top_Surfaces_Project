@@ -31,7 +31,7 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable(denoise_pointcloud src/denoise_pointcloud.cpp)
-target_link_libraries(denoise_pointcloud ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
+target_link_libraries(denoise_pointcloud ${PCL_LIBRARIES} ${rclcpp_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
 
 ament_target_dependencies(
   denoise_pointcloud

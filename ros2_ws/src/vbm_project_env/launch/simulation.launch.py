@@ -40,9 +40,9 @@ def generate_launch_description():
         parameters=[robot_description]
     )
 
-    transform_pointcloud = Node(
-        package='pcl',
-        executable='transform_pointcloud',
+    denoised_point_cloud = Node(
+        package='denoise',
+        executable='denoise_pointcloud',
         output='screen',
     )
 
@@ -64,7 +64,7 @@ def generate_launch_description():
         gazebo,
         spawn_entity,
         node_robot_state_publisher,
-        transform_pointcloud,
+        denoised_point_cloud,
         rviz_node
     ]
 
