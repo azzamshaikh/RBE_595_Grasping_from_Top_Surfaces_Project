@@ -28,7 +28,8 @@ def generate_launch_description():
     spawn_entity = Node(package='gazebo_ros', executable="spawn_entity.py",
                         arguments=['-file',simulation_urdf_path,
                                     '-entity','camera',
-                                    '-z','1',
+                                    #'-x','-1.5',
+                                    '-z','1.5',
                                     '-P','1.57'],
                         output='both' )
 
@@ -39,10 +40,32 @@ def generate_launch_description():
         parameters=[robot_description]
     )
 
+    transform_pointcloud = Node(
+        package='pcl',
+        executable='transform_pointcloud',
+        output='screen',
+    )
+
+    rviz_file = os.path.join(
+        get_package_share_directory('vbm_project_env'),
+        'rviz',
+        'simulation.rviz'
+    )
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d',rviz_file]
+    )
+
     nodes = [
         gazebo,
         spawn_entity,
-        node_robot_state_publisher
+        node_robot_state_publisher,
+        transform_pointcloud,
+        rviz_node
     ]
 
     return LaunchDescription(nodes)
