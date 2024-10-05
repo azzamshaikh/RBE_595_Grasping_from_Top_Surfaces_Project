@@ -46,6 +46,12 @@ def generate_launch_description():
         output='screen',
     )
 
+    object_point_cloud = Node(
+        package='major_plane_detection',
+        executable='plane_detection',
+        #output='none'
+    )
+
     rviz_file = os.path.join(
         get_package_share_directory('vbm_project_env'),
         'rviz',
@@ -65,6 +71,7 @@ def generate_launch_description():
         spawn_entity,
         node_robot_state_publisher,
         denoised_point_cloud,
+        object_point_cloud,
         rviz_node
     ]
 
