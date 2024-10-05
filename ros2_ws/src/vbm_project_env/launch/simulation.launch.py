@@ -49,7 +49,13 @@ def generate_launch_description():
     object_point_cloud = Node(
         package='major_plane_detection',
         executable='plane_detection',
-        #output='none'
+        output='log'
+    )
+
+    planar_surface_cloud = Node(
+        package='planar_surface',
+        executable='planar_surface',
+        output='log'
     )
 
     rviz_file = os.path.join(
@@ -72,6 +78,7 @@ def generate_launch_description():
         node_robot_state_publisher,
         denoised_point_cloud,
         object_point_cloud,
+        planar_surface_cloud,
         rviz_node
     ]
 
