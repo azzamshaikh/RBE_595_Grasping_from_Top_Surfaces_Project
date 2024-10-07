@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(planar_surface)
+project(clustering)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -18,6 +18,11 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_py REQUIRED)
 find_package(tf2_eigen REQUIRED)  
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/StringArray.msg"
+)
 
 include_directories(
   ${PCL_INCLUDE_DIRS}
@@ -30,37 +35,24 @@ link_directories(${PCL_LIBRARY_DIRS})
 
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable(planar_surface src/planar_surface.cpp)
-target_link_libraries(planar_surface ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
-
-add_executable(planar_surface_multiple_objects src/planar_surface_multiple_objects.cpp)
-target_link_libraries(planar_surface_multiple_objects ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
-
+add_executable(clustering src/clustering.cpp)
+target_link_libraries(clustering ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
 
 ament_target_dependencies(
-  planar_surface
+  clustering
   rclcpp
   std_msgs
   sensor_msgs
   pcl_conversions
   tf2_ros
   tf2_eigen  
-)
-
-ament_target_dependencies(
-  planar_surface_multiple_objects
-  rclcpp
-  std_msgs
-  sensor_msgs
+  PCL
   pcl_conversions
-  tf2_ros
-  tf2_eigen  
 )
 
 # Install the executables
 install(TARGETS
-  planar_surface
-  planar_surface_multiple_objects
+  clustering
   DESTINATION lib/${PROJECT_NAME}
 )
 
