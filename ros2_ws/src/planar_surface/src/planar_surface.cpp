@@ -54,11 +54,11 @@ class PlanarSurface : public rclcpp::Node
             // add implementation here
 
             // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
-            sensor_msgs::msg::PointCloud2 cloud_msg;
-            pcl::toROSMsg(*cloud, cloud_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
-            cloud_msg.header.frame_id = "world";
-            cloud_msg.header.stamp = this->get_clock()->now();
-            publisher_->publish(cloud_msg);
+            sensor_msgs::msg::PointCloud2 cloud_msg_output;
+            pcl::toROSMsg(*cloud, cloud_msg_output); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            cloud_msg_output.header.frame_id = "world";
+            cloud_msg_output.header.stamp = this->get_clock()->now();
+            publisher_->publish(cloud_msg_output);
 
         }
 
