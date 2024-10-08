@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            "planar_grasp = planar_grasp.planar_grasp:main"
+            "planar_grasp = planar_grasp.planar_grasp:main",
+            "planar_grasp_multiple_objects = planar_grasp.planar_grasp_multiple_objects:main"
         ],
     },
 )

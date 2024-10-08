@@ -18,11 +18,7 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2_py REQUIRED)
 find_package(tf2_eigen REQUIRED)  
-find_package(rosidl_default_generators REQUIRED)
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  "msg/StringArray.msg"
-)
+find_package(clustering_itf REQUIRED)
 
 include_directories(
   ${PCL_INCLUDE_DIRS}
@@ -48,6 +44,7 @@ ament_target_dependencies(
   tf2_eigen  
   PCL
   pcl_conversions
+  clustering_itf
 )
 
 # Install the executables

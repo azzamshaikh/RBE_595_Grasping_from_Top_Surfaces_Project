@@ -59,13 +59,13 @@ def generate_launch_description():
 
     planar_surface_cloud = Node(
         package='planar_surface',
-        executable='planar_surface',
+        executable='planar_surface_multiple_objects',
         output='log'
     )
 
     planar_grasp = Node(
         package='planar_grasp',
-        executable='planar_grasp',
+        executable='planar_grasp_multiple_objects',
         output='screen',
     )
 
@@ -90,8 +90,8 @@ def generate_launch_description():
         denoised_point_cloud,
         object_point_cloud,
         clustering,
-        #planar_surface_cloud,
-        #planar_grasp,
+        planar_surface_cloud,
+        planar_grasp,
         rviz_node
     ]
 

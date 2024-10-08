@@ -28,7 +28,7 @@
     </include>
 
     <include>
-      <uri>model://cricket_ball</uri>
+      <uri>model://bowl</uri>
       <pose>0 -0.15 0.6 0 0 0</pose>
     </include>
 

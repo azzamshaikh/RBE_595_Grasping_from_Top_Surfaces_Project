@@ -110,8 +110,8 @@ class MajorPlaneDetection : public rclcpp::Node
                 PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
                 return;
             }
-            std::cerr << "Model coefficients: " << coefficients->values[0] << " " << coefficients->values[1] << " "<< coefficients->values[2] << " " << coefficients->values[3] << std::endl;
-            std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
+            //std::cerr << "Model coefficients: " << coefficients->values[0] << " " << coefficients->values[1] << " "<< coefficients->values[2] << " " << coefficients->values[3] << std::endl;
+            //std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
             // assign the inliers to a new point cloud
             pcl::PointCloud<pcl::PointXYZ>::Ptr table_cloud(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
