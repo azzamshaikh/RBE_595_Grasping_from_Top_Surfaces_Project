@@ -27,21 +27,14 @@ colcon build && source install/setup.bash
 ```
 
 ### Launching the simulation
-Use the following command
+Use the following command to launch the sim with 1 object
 ```
 ros2 launch vbm_project_env simulation.launch.py
 ```
 
-### Launching denoise pkg
-In a new terminal, source the workspace and use the following command
+Use the following command to launch the sim with 3 objects
 ```
-ros2 run denoise denoise_pointcloud
-```
-
-### Launching major plane pkg
-In a new terminal, source the workspace and use the following command
-```
-ros2 run major_plane_detection plane_detection
+ros2 launch vbm_project_env simulation_multiple_objects.launch.py
 ```
 
 
