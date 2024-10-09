@@ -58,6 +58,14 @@ def generate_launch_description():
         output = "screen"
     )
 
+    planar_surface = Node(
+        package="planar_surface",
+        executable="planar_surface_multiple_objects",
+        output = "screen"
+    )
+
+
+
     rviz_file = os.path.join(
         get_package_share_directory('vbm_project_env'),
         'rviz',
@@ -79,6 +87,7 @@ def generate_launch_description():
         denoised_point_cloud,
         object_point_cloud,
         clustering_clouds,
+        planar_surface,
         rviz_node
     ]
 

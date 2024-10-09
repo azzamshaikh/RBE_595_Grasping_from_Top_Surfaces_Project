@@ -36,7 +36,7 @@
 class PlanarSurfaceMultipleObjects : public rclcpp::Node
 {
     public:
-        PlanarSurfaceMultipleObjects(): Node("planar_grasping_multiple_objects")
+        PlanarSurfaceMultipleObjects(): Node("planar_surface_multiple_objects")
         {
 
             cluster0_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
@@ -102,7 +102,7 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             float d = coefficients->values[3];
 
             // Calculate the offset for the new plane (3 mm below)
-            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
             float d_new = d - offset;
 
             // Create a new point cloud for the filtered points
@@ -162,7 +162,7 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             float d = coefficients->values[3];
 
             // Calculate the offset for the new plane (3 mm below)
-            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
             float d_new = d - offset;
 
             // Create a new point cloud for the filtered points
@@ -222,7 +222,7 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             float d = coefficients->values[3];
 
             // Calculate the offset for the new plane (3 mm below)
-            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
             float d_new = d - offset;
 
             // Create a new point cloud for the filtered points
