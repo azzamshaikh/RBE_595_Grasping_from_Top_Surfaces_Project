@@ -1,8 +1,0 @@
-source;share/denoise/hook/cmake_prefix_path.ps1
-source;share/denoise/hook/cmake_prefix_path.dsv
-source;share/denoise/hook/cmake_prefix_path.sh
-source;share/denoise/local_setup.bash
-source;share/denoise/local_setup.dsv
-source;share/denoise/local_setup.ps1
-source;share/denoise/local_setup.sh
-source;share/denoise/local_setup.zsh
