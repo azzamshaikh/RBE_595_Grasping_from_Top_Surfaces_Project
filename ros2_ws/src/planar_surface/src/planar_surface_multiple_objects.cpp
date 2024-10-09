@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include <std_msgs/msg/float64_multi_array.hpp>
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/filters/passthrough.h>
@@ -47,6 +48,16 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             cluster2_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
                 "/cluster_2", 10,
                 std::bind(&PlanarSurfaceMultipleObjects::cluster2_callback, this, std::placeholders::_1));
+            
+            // Setup publishers for planar surfaces and float64 arrays
+            cluster0_surface_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/planar_surface_0", 10);
+            cluster1_surface_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/planar_surface_1", 10);
+            cluster2_surface_pub = this->create_publisher<sensor_msgs::msg::PointCloud2>("/planar_surface_2", 10);
+            planar_surface_array_publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("/planar_surface_array", 10);
+
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster0_surface_pub;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster1_surface_pub;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster2_surface_pub;
 
 
             tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -63,7 +74,56 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // add implementation
+            // implement plane detection here
+            pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+            pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            pcl::SACSegmentation<pcl::PointXYZ> seg;
+            seg.setOptimizeCoefficients (true);
+            seg.setModelType (pcl::SACMODEL_PLANE);
+            seg.setMethodType (pcl::SAC_RANSAC);
+            seg.setDistanceThreshold (0.001);
+            seg.setInputCloud (cloud);
+            seg.segment (*inliers, *coefficients);
+            if (inliers->indices.size () == 0)
+            {
+                PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
+                return;
+            }
+            pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
+            for (size_t i = 0; i < inliers->indices.size (); ++i)
+                top_of_object->push_back(cloud->points[inliers->indices[i]]);
+            
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    filtered_cloud->points.push_back(point);
+                }
+            }
+
+            sensor_msgs::msg::PointCloud2 top_of_object_msg;
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            top_of_object_msg.header.frame_id = "world";
+            top_of_object_msg.header.stamp = this->get_clock()->now();
+            cluster0_surface_pub->publish(top_of_object_msg);
 
         }
 
@@ -74,7 +134,56 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // add implementation
+            // implement plane detection here
+            pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+            pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            pcl::SACSegmentation<pcl::PointXYZ> seg;
+            seg.setOptimizeCoefficients (true);
+            seg.setModelType (pcl::SACMODEL_PLANE);
+            seg.setMethodType (pcl::SAC_RANSAC);
+            seg.setDistanceThreshold (0.001);
+            seg.setInputCloud (cloud);
+            seg.segment (*inliers, *coefficients);
+            if (inliers->indices.size () == 0)
+            {
+                PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
+                return;
+            }
+            pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
+            for (size_t i = 0; i < inliers->indices.size (); ++i)
+                top_of_object->push_back(cloud->points[inliers->indices[i]]);
+            
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    filtered_cloud->points.push_back(point);
+                }
+            }
+
+            sensor_msgs::msg::PointCloud2 top_of_object_msg;
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            top_of_object_msg.header.frame_id = "world";
+            top_of_object_msg.header.stamp = this->get_clock()->now();
+            cluster1_surface_pub->publish(top_of_object_msg);
 
         }
         
@@ -85,7 +194,56 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // add implementation
+            // implement plane detection here
+            pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+            pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            pcl::SACSegmentation<pcl::PointXYZ> seg;
+            seg.setOptimizeCoefficients (true);
+            seg.setModelType (pcl::SACMODEL_PLANE);
+            seg.setMethodType (pcl::SAC_RANSAC);
+            seg.setDistanceThreshold (0.001);
+            seg.setInputCloud (cloud);
+            seg.segment (*inliers, *coefficients);
+            if (inliers->indices.size () == 0)
+            {
+                PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
+                return;
+            }
+            pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
+            for (size_t i = 0; i < inliers->indices.size (); ++i)
+                top_of_object->push_back(cloud->points[inliers->indices[i]]);
+            
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.005 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    filtered_cloud->points.push_back(point);
+                }
+            }
+
+            sensor_msgs::msg::PointCloud2 top_of_object_msg;
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            top_of_object_msg.header.frame_id = "world";
+            top_of_object_msg.header.stamp = this->get_clock()->now();
+            cluster2_surface_pub->publish(top_of_object_msg);
 
 
         }
@@ -93,6 +251,11 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cluster0_sub;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cluster1_sub;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cluster2_sub;
+
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster0_surface_pub;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster1_surface_pub;
+        rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster2_surface_pub;
+        rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr planar_surface_array_publisher_;
 
 
         std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
