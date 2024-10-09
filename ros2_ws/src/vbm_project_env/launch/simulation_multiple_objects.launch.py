@@ -69,6 +69,12 @@ def generate_launch_description():
         output='screen',
     )
 
+    grasp_quality = Node(
+        package='grasp_quality',
+        executable='grasp_quality',
+        output='screen',
+    )
+
     rviz_file = os.path.join(
         get_package_share_directory('vbm_project_env'),
         'rviz',
@@ -92,6 +98,7 @@ def generate_launch_description():
         clustering,
         planar_surface_cloud,
         planar_grasp,
+        grasp_quality,
         rviz_node
     ]
 

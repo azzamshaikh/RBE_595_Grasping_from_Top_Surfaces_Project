@@ -7,6 +7,7 @@ import numpy as np
 import sensor_msgs_py.point_cloud2 as pc2
 from scipy.spatial import KDTree
 import time
+from std_msgs.msg import Float32MultiArray
 
 class PlanarGrasp(Node):
 
@@ -56,8 +57,11 @@ class PlanarGrasp(Node):
             10)
         
         self.cluster0_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_0_grasp', 10)
+        self.cluster0_angle_pub_ = self.create_publisher(Float32MultiArray, 'cluster_0_angle',10)
         self.cluster1_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_1_grasp', 10)
+        self.cluster1_angle_pub_ = self.create_publisher(Float32MultiArray, 'cluster_1_angle',10)
         self.cluster2_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_2_grasp', 10)
+        self.cluster2_angle_pub_ = self.create_publisher(Float32MultiArray, 'cluster_2_angle',10)
     
     def wait_for_topic(self, topic_name):
         self.get_logger().info(f"Waiting for topic {topic_name}...")
@@ -76,124 +80,55 @@ class PlanarGrasp(Node):
         #self.get_logger().info(f"{self.edge_pointcloud}.")
 
     def cluster0_top_callback(self, msg):
-        pc_array = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)
-        xyz = pc_array['xyz']
-        x = xyz[:,0]
-        y = xyz[:,1]
-        z = xyz[:,2]
-        com_x = np.average(x)
-        com_y = np.average(y)
-        com_z = np.average(z)
-
-        center_of_mass = np.array([com_x, com_y, com_z], dtype=np.float32)
-        # center_of_mass = np.array([[com_x, com_y, com_z]], dtype=np.float32)
-
-        # cloud.data = center_of_mass.tobytes()
-        # cloud.width = center_of_mass.shape[0]
-        # cloud.height = 1
-        # cloud.is_bigendian = False
-        # cloud.point_step = 12 # size of each point in bytes
-        # cloud.row_step = cloud.point_step*cloud.width
-
-        data = np.row_stack((center_of_mass))
-
-        #####
-        if self.cluster0_kd_tree is not None:
-            dist, idx = self.cluster0_kd_tree.query([com_x, com_y, com_z])
-
-            gp1 = np.array(self.cluster0_edge_pc[idx], dtype=np.float32)
-            # gp1 = np.array([self.cluster0_edge_pc[idx]], dtype=np.float32)
-            # gp1_cloud = PointCloud2()
-            # gp1_cloud.header.stamp = self.get_clock().now().to_msg()
-            # gp1_cloud.header.frame_id = 'world'
-
-            # gp1_cloud.fields = [
-            #     PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-            #     PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-            #     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
-            # ]
-
-            # gp1_cloud.data = gp1.tobytes()
-            # gp1_cloud.width = gp1.shape[0]
-            # gp1_cloud.height = 1
-            # gp1_cloud.is_bigendian = False
-            # gp1_cloud.point_step = 12 # size of each point in bytes
-            # gp1_cloud.row_step = gp1_cloud.point_step*gp1_cloud.width
-            # self.gp1_publisher_.publish(gp1_cloud)
-
-            vector = gp1 - center_of_mass
-            guess = center_of_mass - vector
-            
-            dist2, idx2 = self.cluster0_kd_tree.query(guess)
-            gp2 = np.array(self.cluster0_edge_pc[idx2], dtype=np.float32)
-            # gp2 = np.array([self.edge_pointcloud[idx2]], dtype=np.float32)
-            # gp2_cloud = PointCloud2()
-            # gp2_cloud.header.stamp = self.get_clock().now().to_msg()
-            # gp2_cloud.header.frame_id = 'world'
-
-            # gp2_cloud.fields = [
-            #     PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-            #     PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-            #     PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
-            # ]
-
-            # gp2_cloud.data = gp2.tobytes()
-            # gp2_cloud.width = gp2.shape[0]
-            # gp2_cloud.height = 1
-            # gp2_cloud.is_bigendian = False
-            # gp2_cloud.point_step = 12
-            # gp2_cloud.row_step = gp2_cloud.point_step*gp2_cloud.width
-            # self.gp2_publisher_.publish(gp2_cloud)
-            data = np.row_stack((center_of_mass, gp1, gp2))
-
-        cloud = PointCloud2()
-        cloud.header.stamp = self.get_clock().now().to_msg()
-        cloud.header.frame_id = 'world'
-
-        cloud.fields = [
-            PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
-        ]
-
-        cloud.data = data.tobytes()
-        cloud.width = center_of_mass.shape[0]
-        cloud.height = 1
-        cloud.is_bigendian = False
-        cloud.point_step = 12 # size of each point in bytes
-        cloud.row_step = cloud.point_step*cloud.width
-            
+        cloud, angles = self.obtain_grasp_points(msg, self.cluster0_kd_tree, self.cluster0_edge_pc)
         self.cluster0_grasp_pub_.publish(cloud)
+        self.cluster0_angle_pub_.publish(angles)
     
 
     def cluster1_convex_callback(self, msg):
         pc_array = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)
         xyz = pc_array['xyz']
-        #self.edge_pointcloud = np.array([p[:3] for p in pc2.read_points(msg, skip_nans=True)])
         self.cluster1_edge_pc = xyz
         self.cluster1_kd_tree = KDTree(xyz)
-        #self.get_logger().info(f"{self.edge_pointcloud}.")
 
     def cluster1_top_callback(self, msg):
-
-        cloud = self.obtain_grasp_points(msg, self.cluster1_kd_tree, self.cluster1_edge_pc)
+        cloud, angles = self.obtain_grasp_points(msg, self.cluster1_kd_tree, self.cluster1_edge_pc)
         self.cluster1_grasp_pub_.publish(cloud)
+        self.cluster1_angle_pub_.publish(angles)
 
     def cluster2_convex_callback(self, msg):
         pc_array = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)
         xyz = pc_array['xyz']
-        #self.edge_pointcloud = np.array([p[:3] for p in pc2.read_points(msg, skip_nans=True)])
         self.cluster2_edge_pc = xyz
         self.cluster2_kd_tree = KDTree(xyz)
-        #self.get_logger().info(f"{self.edge_pointcloud}.")
 
     def cluster2_top_callback(self, msg):
-
-        cloud = self.obtain_grasp_points(msg, self.cluster2_kd_tree, self.cluster2_edge_pc)
+        cloud, angles = self.obtain_grasp_points(msg, self.cluster2_kd_tree, self.cluster2_edge_pc)
         self.cluster2_grasp_pub_.publish(cloud)
+        self.cluster2_angle_pub_.publish(angles)
 
+    @staticmethod
+    def obtain_normal_and_theta(neighbors, point):
+        point = point[:-1]  # remove z
+        neighbors = neighbors[:,:-1] # remove z
+
+        # Compute the covariance matrix and perform PCA
+        cov_matrix = np.cov(neighbors.T)
+        eigvals, eigvecs = np.linalg.eig(cov_matrix)
+        # The eigenvector corresponding to the smallest eigenvalue is the normal direction
+        normal = eigvecs[:, np.argmin(eigvals)]
+        
+        # Normalize the normal vector
+        normal = point / np.linalg.norm(point)
+        
+
+        # Flip normal
+        normal = -normal
+
+        angle = np.arctan2(normal[1], normal[0],dtype=np.float32)
+        return angle
     
-    def obtain_grasp_points(self, msg, kd_tree : KDTree, edge_pc):
+    def obtain_grasp_points(self,msg, kd_tree : KDTree, edge_pc):
         pc_array = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)
         xyz = pc_array['xyz']
         x = xyz[:,0]
@@ -207,20 +142,35 @@ class PlanarGrasp(Node):
 
 
         data = np.row_stack((center_of_mass))
-
+        angles = Float32MultiArray()
+        angles.data = np.array([0,0], dtype=np.float32).tolist()
         #####
         if kd_tree is not None:
             dist, idx = kd_tree.query([com_x, com_y, com_z])
 
             gp1 = np.array(edge_pc[idx], dtype=np.float32)
 
+            # get angle for gp1
+            _, indicies = kd_tree.query(gp1,k=3)
+            neighbors = edge_pc[indicies]
+            gp1_angle = self.obtain_normal_and_theta(neighbors,gp1)
+
             vector = gp1 - center_of_mass
             guess = center_of_mass - vector
             
             dist2, idx2 = kd_tree.query(guess)
             gp2 = np.array(edge_pc[idx2], dtype=np.float32)
+
+
+            # get angle for gp2
+            _, indicies = kd_tree.query(gp2,k=3)
+            neighbors = edge_pc[indicies]
+            gp2_angle = self.obtain_normal_and_theta(neighbors,gp2)
+
             data = np.row_stack((center_of_mass, gp1, gp2))
 
+            angles.data = np.array( [gp1_angle, gp2_angle], dtype=np.float32).tolist()
+            
         cloud = PointCloud2()
         cloud.header.stamp = self.get_clock().now().to_msg()
         cloud.header.frame_id = 'world'
@@ -232,13 +182,13 @@ class PlanarGrasp(Node):
         ]
 
         cloud.data = data.tobytes()
-        cloud.width = center_of_mass.shape[0]
+        cloud.width = data.shape[0]
         cloud.height = 1
         cloud.is_bigendian = False
         cloud.point_step = 12 # size of each point in bytes
         cloud.row_step = cloud.point_step*cloud.width
             
-        return cloud
+        return cloud, angles
 
 
 
