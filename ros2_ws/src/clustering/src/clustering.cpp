@@ -69,10 +69,12 @@ class Clustering : public rclcpp::Node
 
             std::vector<std::string> cluster_topic_names;
             auto cluster_topic_name_msg = clustering_itf::msg::StringArray();
+            cluster_publishers.clear();
 
             for(size_t id = 0; id < cluster_indices.size(); id++){
                 //std::cout << "Adding topic" << std::endl;
                 cluster_topic_names.push_back("/cluster_" + std::to_string(id));
+                cluster_publishers.push_back(this->create_publisher<sensor_msgs::msg::PointCloud2>("/cluster_" + std::to_string(id),10));
             }
             
             cluster_topic_name_msg.string_array = cluster_topic_names;
@@ -81,7 +83,7 @@ class Clustering : public rclcpp::Node
 
             for(size_t id = 0; id < cluster_indices.size(); id++){
                 std::string topic_name = cluster_topic_names[id];
-                cluster_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10);
+                //cluster_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10);
                 auto& cluster = cluster_indices[id];
 
                 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
@@ -97,58 +99,10 @@ class Clustering : public rclcpp::Node
                 cluster_msg.header.frame_id = "world";
                 cluster_msg.header.stamp = this->get_clock()->now();
 
-                cluster_publisher_->publish(cluster_msg);
+                cluster_publishers[id]->publish(cluster_msg);
                 
                 //RCLCPP_INFO(this->get_logger(), "Published cluster %d", id);
             }
-
-            // int cluster_id = 0;
-            // for (const auto& cluster : cluster_indices){
-            //     std::string topic_name = "/cluster_" + std::to_string(cluster_id);
-            //     cluster_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10);
-            //     // auto cluster_topic_name_msg = clustering_itf::msg::StringArray();
-            //     // for (const auto& str : cluster_topic_names) {
-            //     //     if (str == topic_name) {
-            //     //         break;
-            //     //     }
-            //     //     else{
-            //     //         cluster_topic_names.push_back(topic_name);
-
-            //     //     }
-            //     // }
-            //     //cluster_topic_name_msg.string_array = cluster_topic_names;
-            
-            //     //cluster_publishers.push_back(this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10));
-            //     //RCLCPP_INFO(this->get_logger(), "Publisher size %i", cluster_publishers.size());
-
-            //     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-            //     for (const auto& idx: cluster.indices){
-            //         cloud_cluster->push_back((*cloud)[idx]);
-            //     }
-            //     cloud_cluster->width = cloud_cluster->size();
-            //     cloud_cluster->height = 1;
-            //     cloud_cluster->is_dense = true;
-
-            //     sensor_msgs::msg::PointCloud2 cluster_msg;
-            //     pcl::toROSMsg(*cloud_cluster, cluster_msg);
-            //     cluster_msg.header.frame_id = "world";
-            //     cluster_msg.header.stamp = this->get_clock()->now();
-
-            //     cluster_publisher_->publish(cluster_msg);
-            //     //cluster_name_publisher_->publish(cluster_topic_name_msg);
-            //     //cluster_publishers[cluster_id]->publish(cluster_msg); 
-                
-            //     RCLCPP_INFO(this->get_logger(), "Published cluster %d", cluster_id);
-            //     cluster_id++;
-            // }
-
-
-            // sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            // pcl::toROSMsg(*top_of_object, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
-            // top_of_object_msg.header.frame_id = "world";
-            // top_of_object_msg.header.stamp = this->get_clock()->now();
-            // top_of_object_publisher_->publish(top_of_object_msg);
-
         }
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_subscription_;
