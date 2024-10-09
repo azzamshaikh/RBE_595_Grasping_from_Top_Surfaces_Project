@@ -35,7 +35,7 @@
 class PlanarSurfaceMultipleObjects : public rclcpp::Node
 {
     public:
-        PlanarSurfaceMultipleObjects(): Node("planar_grasping_multiple_objects")
+        PlanarSurfaceMultipleObjects(): Node("planar_surface_multiple_objects")
         {
 
             cluster0_sub = this->create_subscription<sensor_msgs::msg::PointCloud2>(
