@@ -145,10 +145,19 @@ def main(args=None):
     # theta_1 = 0
     # p2 = (10,10)
     # theta_2 = 225
-    p1 = (0,0)
-    theta_1 = 45
-    p2 = (0,10)
-    theta_2 = 270
+
+    # p1 = (0,0)
+    # theta_1 = 45
+    # p2 = (0,10)
+    # theta_2 = 270
+
+    p1 = (0.002298788886335888, 0.49688825522793273, -179.8161212539945)  # (x1, y1, theta1)
+    p2 = (0.9983957862238022, 0.5000850298796488, 0.1806434)
+    theta_1 = p1[2]
+    theta_2 = p2[2]
+    p1 = p1[:2]
+    p2 = p2[:2]
+    
 
     result = calculate_angle(p1,theta_1,p2,theta_2)
     print("result [rad.]: ",result)
