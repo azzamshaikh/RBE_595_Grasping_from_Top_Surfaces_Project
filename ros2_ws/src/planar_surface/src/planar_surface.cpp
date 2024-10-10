@@ -71,8 +71,6 @@ class PlanarSurface : public rclcpp::Node
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
             
-                        
-
 
             // Step 2: Filter points 3 mm below the top plane
 
