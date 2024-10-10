@@ -53,22 +53,23 @@ class PlanarGrasp(Node):
 
     def cluster0_grasp_callback(self, msg):
         x, y = self.pointcloud_to_x_and_y(msg)
-
+        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
+        GP1[2] = z_mean
+        GP2[2] = z_mean
+        #stack the gp1, gp2, com vertically
+        points = np.zeros((3,3), dtype=np.float32)
+        points[0] = GP1
+        points[1] = GP2
+        points[2] = [com.x, com.y, z_mean]
 
         normals = np.array([GP1[2], GP2[2]])
-        #convert to numpy float32
-        GP1 = np.array(GP1, dtype=np.float32)
-        GP2 = np.array(GP2, dtype=np.float32)
-        
-        cloud_GP1 = self.to_pointcloud_msg(GP1)
-        cloud_GP2 = self.to_pointcloud_msg(GP2)
-        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
 
-        #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
-        self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
+        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
+        # self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
 
         #publish the angle
         angle = Float32MultiArray()
@@ -79,18 +80,22 @@ class PlanarGrasp(Node):
 
     def cluster1_grasp_callback(self, msg):
         x, y = self.pointcloud_to_x_and_y(msg)
-
+        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
-        
-        cloud_GP1 = self.to_pointcloud_msg(GP1)
-        cloud_GP2 = self.to_pointcloud_msg(GP2)
-        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
+        GP1[2] = z_mean
+        GP2[2] = z_mean
+        #stack the gp1, gp2, com vertically
+        points = np.zeros((3,3), dtype=np.float32)
+        points[0] = GP1
+        points[1] = GP2
+        points[2] = com
 
         normals = np.array([GP1[2], GP2[2]])
 
-        #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
+        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
         self.cluster1_grasp_pub_.publish(msg)
 
         angle = Float32MultiArray()
@@ -101,19 +106,24 @@ class PlanarGrasp(Node):
 
     def cluster2_grasp_callback(self, msg):
         x, y = self.pointcloud_to_x_and_y(msg)
-        
+        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
-        
-        cloud_GP1 = self.to_pointcloud_msg(GP1)
-        cloud_GP2 = self.to_pointcloud_msg(GP2)
-        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
-
+        GP1[2] = z_mean
+        GP2[2] = z_mean
+        #stack the gp1, gp2, com vertically
+        points = np.zeros((3,3), dtype=np.float32)
+        points[0] = GP1
+        points[1] = GP2
+        points[2] = com
+        self.get_logger().info(f"GP1: {GP1}, GP2: {GP2}, COM: {com}")
         normals = np.array([GP1[2], GP2[2]])
 
-        #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
-        self.cluster2_grasp_pub_.publish(msg)
+        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
+        
+        self.cluster2_grasp_pub_.publish(cloud)
 
         angle = Float32MultiArray()
         angle.data = normals
@@ -138,8 +148,8 @@ class PlanarGrasp(Node):
             PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
             PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
         ]
-
         cloud.data = data.tobytes()
+
         cloud.width = data.shape[0]
         cloud.height = 1
         cloud.is_bigendian = False
