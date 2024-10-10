@@ -8,6 +8,9 @@ import numpy.typing as npt
 import sensor_msgs_py.point_cloud2 as pc2
 from scipy.spatial import KDTree
 import time
+import alphashape
+from shapely.geometry import Polygon, Point, LineString
+from shapely.ops import nearest_points
 
 class PlanarGrasp(Node):
 
@@ -48,7 +51,11 @@ class PlanarGrasp(Node):
         x, y = self.pointcloud_to_x_and_y(msg)
 
         # add implementation here
+        # points = np.array([x, y]).T
+        # GP1, GP2 = compute_grasp_points(points)
 
+        # normals = np.array([GP1[2], GP2[2]])
+        # msg 
         #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
         self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
     
@@ -99,9 +106,55 @@ class PlanarGrasp(Node):
         return cloud
 
 
+def get_normal_vector(segment, outward=True):
 
+        p1 = np.array(segment.coords[0])
+        p2 = np.array(segment.coords[1])
 
+        direction_vector = p2 - p1
 
+        normal_vector = np.array([-direction_vector[1], direction_vector[0]])
+        normal_vector /= np.linalg.norm(normal_vector)
+
+        if not outward:
+            normal_vector = -normal_vector
+        
+        return normal_vector
+
+def compute_grasp_points(points, alpha=0.01):
+
+    alpha_shape = alphashape.alphashape(points, alpha)
+
+    if isinstance(alpha_shape, Polygon): # if it is not a polygon, something's wrong
+        com = alpha_shape.centroid
+        closest_point = nearest_points(com, alpha_shape.exterior)[1]
+        
+        direction_vector = np.array([closest_point.x - com.x, closest_point.y - com.y])
+        opposite_point_guess = Point(com.x - 2 * direction_vector[0], com.y - 2 * direction_vector[1])
+        line_to_opposite = LineString([com, opposite_point_guess])
+        intersection = line_to_opposite.intersection(alpha_shape.exterior)
+
+        if not intersection.is_empty:
+            if intersection.geom_type == 'Point':
+                opposite_point = intersection
+            elif intersection.geom_type == 'MultiPoint':
+                # If multiple points, take the outermost one (usually rare in polygons)
+                opposite_point = max(intersection, key=lambda pt: np.linalg.norm(np.array([pt.x, pt.y]) - np.array([com.x, com.y])))
+
+        polygon_segments = list(alpha_shape.exterior.coords)
+        closest_segment = min([(LineString([polygon_segments[i], polygon_segments[i + 1]]), i) for i in range(len(polygon_segments) - 1)],
+            key=lambda seg: seg[0].distance(closest_point))[0]
+
+        opposite_segment = min([(LineString([polygon_segments[i], polygon_segments[i + 1]]), i) for i in range(len(polygon_segments) - 1)],
+            key=lambda seg: seg[0].distance(opposite_point))[0]
+
+        closest_normal = get_normal_vector(closest_segment)
+        opposite_normal = get_normal_vector(opposite_segment)
+        
+        closest_normal_orientation = np.arctan2(closest_normal[1], closest_normal[0])
+        opposite_normal_orientation = np.arctan2(opposite_normal[1], opposite_normal[0])
+
+        return [closest_point.x, closest_point.y, closest_normal_orientation], [opposite_point.x, opposite_point.y, opposite_normal_orientation]
 
 def main(args=None):
     rclpy.init(args=args)
