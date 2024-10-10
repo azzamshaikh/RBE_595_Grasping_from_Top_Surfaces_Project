@@ -27,12 +27,17 @@
       <pose>0 0.15 0.6 0 0 0</pose>
     </include>
 
-    <model name="banana">
+    <include>
+      <uri>model://bowl</uri>
+      <pose>0 -0.15 0.6 0 0 0</pose>
+    </include>
+
+    <!-- <model name="banana">
     <include>
       <uri>model://banana</uri>
       <pose>0 -0.15 0.53 0 0 0</pose>
     </include>
-    </model>
+    </model> -->
 
   </world>
 </sdf>
