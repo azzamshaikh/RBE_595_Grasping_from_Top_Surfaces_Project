@@ -67,7 +67,8 @@ class PlanarGrasp(Node):
         points[2] = [com.x, com.y, z_mean]
 
         normals = np.array([GP1[2], GP2[2]])
-
+        points = points.flatten().tolist()
+        points = np.array(points, dtype=np.float32)
         cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
         # self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
 
@@ -94,7 +95,8 @@ class PlanarGrasp(Node):
         points[2] = com
 
         normals = np.array([GP1[2], GP2[2]])
-
+        points = points.flatten().tolist()
+        points = np.array(points, dtype=np.float32)
         cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
         self.cluster1_grasp_pub_.publish(msg)
 
@@ -121,6 +123,8 @@ class PlanarGrasp(Node):
         self.get_logger().info(f"GP1: {GP1}, GP2: {GP2}, COM: {com}")
         normals = np.array([GP1[2], GP2[2]])
 
+        points = points.flatten().tolist()
+        points = np.array(points, dtype=np.float32)
         cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
         
         self.cluster2_grasp_pub_.publish(cloud)
@@ -138,7 +142,7 @@ class PlanarGrasp(Node):
         z = xyz[:,2]
         return x, y 
     
-    def to_pointcloud_msg(self, data:npt.NDArray[np.float32]):
+    def to_pointcloud_msg(self, data: npt.NDArray[np.float32]):
         cloud = PointCloud2()
         cloud.header.stamp = self.get_clock().now().to_msg()
         cloud.header.frame_id = 'world'
@@ -148,14 +152,19 @@ class PlanarGrasp(Node):
             PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
             PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1)
         ]
+        
+        # Reshape the data to ensure it's in the correct format (3 points, with x, y, z)
+        # assert data.shape == (3, 3), "Data should have shape (3, 3) for GP1, GP2, COM"
+        self.get_logger().info(f"Data: {data}")
+        # Convert the data to a byte stream, maintaining point structure
         cloud.data = data.tobytes()
 
-        cloud.width = data.shape[0]
-        cloud.height = 1
+        cloud.width = data.shape[0]  # 3 points (GP1, GP2, COM)
+        cloud.height = 1  # Unordered point cloud
         cloud.is_bigendian = False
-        cloud.point_step = 12 # size of each point in bytes
-        cloud.row_step = cloud.point_step*cloud.width
-            
+        cloud.point_step = 12  # Each point is 12 bytes (3 floats * 4 bytes each)
+        cloud.row_step = cloud.point_step * cloud.width
+
         return cloud
 
 
