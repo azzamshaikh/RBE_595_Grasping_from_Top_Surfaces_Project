@@ -31,9 +31,9 @@
 class MajorPlaneDetection : public rclcpp::Node
 {
     public:
+        // Constructor: Initializes the node, sets up subscriptions and publishers, and creates a transform listener
         MajorPlaneDetection(): Node("plane_detection")
         {
-
             pointcloud_subscription_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
                 "/denoised_pointcloud_data", 10,
                 std::bind(&MajorPlaneDetection::plane_detection_callback, this, std::placeholders::_1));
@@ -45,13 +45,17 @@ class MajorPlaneDetection : public rclcpp::Node
         }
 
     private:
+        // Callback function that processes the point cloud to detect and remove the major plane
         void plane_detection_callback(const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg){
+            // Convert the incoming ROS point cloud message to a PCL point cloud
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*cloud_msg,*cloud);
             
-            // implement plane detection here
+            // Implement plane detection using RANSAC (Random Sample Consensus)
             pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
             pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+
+            // Set up the segmentation object for plane detection
             pcl::SACSegmentation<pcl::PointXYZ> seg;
             seg.setOptimizeCoefficients (true);
             seg.setModelType (pcl::SACMODEL_PLANE);
@@ -59,30 +63,38 @@ class MajorPlaneDetection : public rclcpp::Node
             seg.setDistanceThreshold (0.01);
             seg.setInputCloud (cloud);
             seg.segment (*inliers, *coefficients);
+            
+            // If no plane was detected, log an error and return
             if (inliers->indices.size () == 0)
             {
                 PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
                 return;
             }
+            // Optionally, print the coefficients and inliers (commented out for now)
             // std::cerr << "Model coefficients: " << coefficients->values[0] << " " << coefficients->values[1] << " "<< coefficients->values[2] << " " << coefficients->values[3] << std::endl;
             // std::cerr << "Model inliers: " << inliers->indices.size () << std::endl;
-            // assign the inliers to a new point cloud
+            
+            // Create a new point cloud to store the points not belonging to the detected plane (i.e., the objects)
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_f(new pcl::PointCloud<pcl::PointXYZ>);
             pcl::ExtractIndices<pcl::PointXYZ> extract;
+
+            // Set the input cloud and the indices of the plane inliers
     	    extract.setInputCloud(cloud);          // Set the input point cloud
     	    extract.setIndices(inliers);           // Set the indices of the points to be removed
     	    extract.setNegative(true);             // True to remove the inliers (instead of keeping them)
     	    extract.filter(*cloud_f);// Perform the filtering	
 
-            // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
+            // Convert the filtered point cloud (objects) back to a ROS message
             sensor_msgs::msg::PointCloud2 object_cloud_msg;
             pcl::toROSMsg(*cloud_f, object_cloud_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
             object_cloud_msg.header.frame_id = "world";
             object_cloud_msg.header.stamp = this->get_clock()->now();
 
+            // Publish the point cloud containing the objects
             object_pointcloud_publisher_->publish(object_cloud_msg);
         }
-
+        
+        // Setup subscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_subscription_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr object_pointcloud_publisher_;
         std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -91,8 +103,13 @@ class MajorPlaneDetection : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
+  // Initialize the ROS2 system
   rclcpp::init(argc, argv);
+    
+  // Create an instance of the Denoise node and start spinning to process callbacks
   rclcpp::spin(std::make_shared<MajorPlaneDetection>());
+  
+  // Shutdown the ROS2 system when the node is done
   rclcpp::shutdown();
   return 0;
 }

@@ -59,6 +59,9 @@ class GraspQuality(Node):
         
     
     def wait_for_topic(self, topic_name):
+        """
+        Function to wait until the topic is available
+        """
         self.get_logger().info(f"Waiting for topic {topic_name}...")
         while topic_name not in [name for name, _ in self.get_topic_names_and_types()]:
             time.sleep(0.5)
@@ -68,6 +71,9 @@ class GraspQuality(Node):
 
     @staticmethod
     def w_x_r(c,o):
+        """
+        Function to compute the cross product
+        """
         r = c-o
         return np.array([-r[1],r[0]])
 
@@ -121,6 +127,9 @@ class GraspQuality(Node):
     
     @staticmethod
     def compute_grasp_metrics(G):
+        """
+        Function to extract the grasp metrics for a given grasp matrix
+        """
         singular_values = np.linalg.svd(G, compute_uv=False)
         min_val = np.min(singular_values)
         max_val = np.max(singular_values)
@@ -132,55 +141,97 @@ class GraspQuality(Node):
 
 
     def cluster_0_callback(self,msg):
+        """
+        Call back for cluster 0
+        """
+        # Get the origins and contacts from the pointcloud
         origin, contacts = self.preprocess_pointcloud(msg)
 
+        # COmpute the grasp matrix
         G = self.compute_grasp_matrix(origin, contacts, self.cluster_0_rotations)
+
+        # COmpute the grasp metrics
         min_singular_value, ellipsoid_metric, isotropy_index = self.compute_grasp_metrics(G)
+
+        # Print results
         print("For cluster 0\n\tSingular Value: {}\n\tEllipsoid: {}\n\tIsotropy Index: {}".format(min_singular_value,
                                                                                                   ellipsoid_metric,
                                                                                                   isotropy_index))
 
 
     def cluster_1_callback(self,msg):
+        """
+        Call back for cluster 1
+        """
+        # Get the origins and contacts from the pointcloud
         origin, contacts = self.preprocess_pointcloud(msg)
+
+        # COmpute the grasp matrix
         G = self.compute_grasp_matrix(origin, contacts, self.cluster_1_rotations)
+
+        # COmpute the grasp metrics
         min_singular_value, ellipsoid_metric, isotropy_index = self.compute_grasp_metrics(G)
+
+        # Print results
         print("For cluster 1\n\tSingular Value: {}\n\tEllipsoid: {}\n\tIsotropy Index: {}".format(min_singular_value,
                                                                                                   ellipsoid_metric,
                                                                                                   isotropy_index))
 
     def cluster_2_callback(self,msg):
+        """
+        Call back for cluster 1
+        """
+        # Get the origins and contacts from the pointcloud
         origin, contacts = self.preprocess_pointcloud(msg)
+
+        # COmpute the grasp matrix
         G = self.compute_grasp_matrix(origin, contacts, self.cluster_2_rotations)
+        
+        # COmpute the grasp metrics
         min_singular_value, ellipsoid_metric, isotropy_index = self.compute_grasp_metrics(G)
+        
+        # Print results
         print("For cluster 2\n\tSingular Value: {}\n\tEllipsoid: {}\n\tIsotropy Index: {}".format(min_singular_value,
                                                                                                   ellipsoid_metric,
                                                                                                   isotropy_index))
         
 
     def cluster_0_angle_callback(self, msg: Float32MultiArray):
+        """
+        Call back for cluster 0 angles
+        """
+        # Convert the orientations to rotation matrices. The order is GP1 and GP2. 
         rotations = []
         for angle in msg.data:
             rotations.append(self.R(angle))
-        # print("cluster0 rot:", rotations)            
         self.cluster_0_rotations = rotations
 
     def cluster_1_angle_callback(self, msg: Float32MultiArray):
+        """
+        Call back for cluster 1 angles
+        """
+        # Convert the orientations to rotation matrices. The order is GP1 and GP2. 
         rotations = []
         for angle in msg.data:
             rotations.append(self.R(angle))
-        # print("cluster1 rot:", rotations)  
         self.cluster_1_rotations = rotations
 
     def cluster_2_angle_callback(self, msg: Float32MultiArray):
+        """
+        Call back for cluster 2 angles
+        """
+        # Convert the orientations to rotation matrices. The order is GP1 and GP2. 
         rotations = []
         for angle in msg.data:
             rotations.append(self.R(angle))
-        #print("cluster2 rot:", rotations)  
         self.cluster_2_rotations = rotations
     
     @staticmethod
     def preprocess_pointcloud(msg):
+        """
+        Function to process the grasp point cloud. Needs data in com, gp1, gp2 format
+        Ouputs the origin (com), and the two contacts (gp1, gp2)
+        """
         xyz = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz']
         origin = xyz[0,:]
         contacts = []

@@ -49,16 +49,20 @@ class Clustering : public rclcpp::Node
         }
 
     private:
-
+        // Callback function for clustering the input point cloud
         void clustering_callback(const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg){
+            // Convert the incoming ROS point cloud message to a PCL point cloud
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*cloud_msg,*cloud);
             
-            // implement plane detection here
+            // Create a KD-tree for efficient neighbor search
             pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
             tree->setInputCloud(cloud);
-
+            
+            // Store the indices of the clustered points
             std::vector<pcl::PointIndices> cluster_indices;
+
+            // Set up Euclidean clustering algorithm
             pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
             ec.setClusterTolerance(0.02);
             ec.setMinClusterSize(100);
@@ -67,106 +71,65 @@ class Clustering : public rclcpp::Node
             ec.setInputCloud(cloud);
             ec.extract(cluster_indices);
 
+            // Prepare a vector to store the names of topics for each detected cluster
             std::vector<std::string> cluster_topic_names;
             auto cluster_topic_name_msg = clustering_itf::msg::StringArray();
             cluster_publishers.clear();
 
+            // For each detected cluster, create a new ROS topic and publisher
             for(size_t id = 0; id < cluster_indices.size(); id++){
-                //std::cout << "Adding topic" << std::endl;
                 cluster_topic_names.push_back("/cluster_" + std::to_string(id));
                 cluster_publishers.push_back(this->create_publisher<sensor_msgs::msg::PointCloud2>("/cluster_" + std::to_string(id),10));
             }
             
+            // Store the cluster topic names in the message and publish them
             cluster_topic_name_msg.string_array = cluster_topic_names;
             cluster_name_publisher_->publish(cluster_topic_name_msg);
 
-
+            // Loop through each cluster and publish the individual cluster point cloud to its topic
             for(size_t id = 0; id < cluster_indices.size(); id++){
-                std::string topic_name = cluster_topic_names[id];
-                //cluster_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10);
-                auto& cluster = cluster_indices[id];
+                std::string topic_name = cluster_topic_names[id];  // Get the topic name for the current cluster
+                auto& cluster = cluster_indices[id];               // Get the point indices  for the current cluster 
 
+                // Create a new point cloud to store the points belonging to the current cluster
                 pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
                 for (const auto& idx: cluster.indices){
                     cloud_cluster->push_back((*cloud)[idx]);
                 }
+                
+                // Set the dimensions and density of the point cloud (height = 1 since it's organized as a 1D point cloud)
                 cloud_cluster->width = cloud_cluster->size();
                 cloud_cluster->height = 1;
                 cloud_cluster->is_dense = true;
 
+                // Convert the PCL point cloud to a ROS message
                 sensor_msgs::msg::PointCloud2 cluster_msg;
                 pcl::toROSMsg(*cloud_cluster, cluster_msg);
                 cluster_msg.header.frame_id = "world";
                 cluster_msg.header.stamp = this->get_clock()->now();
 
+                // Publish the point cloud of the current cluster to its respective topic
                 cluster_publishers[id]->publish(cluster_msg);
-                
-                //RCLCPP_INFO(this->get_logger(), "Published cluster %d", id);
             }
-
-            // int cluster_id = 0;
-            // for (const auto& cluster : cluster_indices){
-            //     std::string topic_name = "/cluster_" + std::to_string(cluster_id);
-            //     cluster_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10);
-            //     // auto cluster_topic_name_msg = clustering_itf::msg::StringArray();
-            //     // for (const auto& str : cluster_topic_names) {
-            //     //     if (str == topic_name) {
-            //     //         break;
-            //     //     }
-            //     //     else{
-            //     //         cluster_topic_names.push_back(topic_name);
-
-            //     //     }
-            //     // }
-            //     //cluster_topic_name_msg.string_array = cluster_topic_names;
-            
-            //     //cluster_publishers.push_back(this->create_publisher<sensor_msgs::msg::PointCloud2>(topic_name,10));
-            //     //RCLCPP_INFO(this->get_logger(), "Publisher size %i", cluster_publishers.size());
-
-            //     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
-            //     for (const auto& idx: cluster.indices){
-            //         cloud_cluster->push_back((*cloud)[idx]);
-            //     }
-            //     cloud_cluster->width = cloud_cluster->size();
-            //     cloud_cluster->height = 1;
-            //     cloud_cluster->is_dense = true;
-
-            //     sensor_msgs::msg::PointCloud2 cluster_msg;
-            //     pcl::toROSMsg(*cloud_cluster, cluster_msg);
-            //     cluster_msg.header.frame_id = "world";
-            //     cluster_msg.header.stamp = this->get_clock()->now();
-
-            //     cluster_publisher_->publish(cluster_msg);
-            //     //cluster_name_publisher_->publish(cluster_topic_name_msg);
-            //     //cluster_publishers[cluster_id]->publish(cluster_msg); 
-                
-            //     RCLCPP_INFO(this->get_logger(), "Published cluster %d", cluster_id);
-            //     cluster_id++;
-            // }
-
-
-            // sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            // pcl::toROSMsg(*top_of_object, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
-            // top_of_object_msg.header.frame_id = "world";
-            // top_of_object_msg.header.stamp = this->get_clock()->now();
-            // top_of_object_publisher_->publish(top_of_object_msg);
 
         }
 
+        // Setup subscribers and publishers
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_subscription_;
         rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cluster_publisher_;
         std::vector<rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr> cluster_publishers;
-        
         rclcpp::Publisher<clustering_itf::msg::StringArray>::SharedPtr cluster_name_publisher_;
-        
         std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
         std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 };
 
 int main(int argc, char * argv[])
 {
+  // Initialize the ROS2 system
   rclcpp::init(argc, argv);
+  // Create an instance of the Denoise node and start spinning to process callbacks
   rclcpp::spin(std::make_shared<Clustering>());
+  // Shutdown the ROS2 system when the node is done
   rclcpp::shutdown();
   return 0;
 }

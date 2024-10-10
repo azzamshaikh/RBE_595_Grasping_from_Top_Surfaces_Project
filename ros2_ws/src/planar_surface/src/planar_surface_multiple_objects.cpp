@@ -74,9 +74,11 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // implement plane detection here
+            // Implement plane detection using RANSAC (Random Sample Consensus)
             pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
             pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            
+            // Set up the segmentation object for plane detection
             pcl::SACSegmentation<pcl::PointXYZ> seg;
             seg.setOptimizeCoefficients (true);
             seg.setModelType (pcl::SACMODEL_PLANE);
@@ -84,17 +86,20 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             seg.setDistanceThreshold (0.001);
             seg.setInputCloud (cloud);
             seg.segment (*inliers, *coefficients);
+            
+            // If no plane was detected, log an error and return
             if (inliers->indices.size () == 0)
             {
                 PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
                 return;
             }
+
+            // Create a new point cloud to store the points not belonging to the detected plane (i.e., the objects)
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
             
-            // Step 2: Filter points 3 mm below the top plane
-
+            // Filter points 3 mm below the top plane
             // Extract plane coefficients (a, b, c, d) from the detected plane
             float a = coefficients->values[0];
             float b = coefficients->values[1];
@@ -119,8 +124,9 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
                 }
             }
 
+            // Conver the cloud to a message and publish
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); 
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster0_surface_pub->publish(top_of_object_msg);
@@ -134,9 +140,11 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // implement plane detection here
+            // Implement plane detection using RANSAC (Random Sample Consensus)
             pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
             pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            
+            // Set up the segmentation object for plane detection
             pcl::SACSegmentation<pcl::PointXYZ> seg;
             seg.setOptimizeCoefficients (true);
             seg.setModelType (pcl::SACMODEL_PLANE);
@@ -144,17 +152,20 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             seg.setDistanceThreshold (0.001);
             seg.setInputCloud (cloud);
             seg.segment (*inliers, *coefficients);
+            
+            // If no plane was detected, log an error and return
             if (inliers->indices.size () == 0)
             {
                 PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
                 return;
             }
+
+            // Create a new point cloud to store the points not belonging to the detected plane (i.e., the objects)
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
             
-            // Step 2: Filter points 3 mm below the top plane
-
+            // Filter points 3 mm below the top plane
             // Extract plane coefficients (a, b, c, d) from the detected plane
             float a = coefficients->values[0];
             float b = coefficients->values[1];
@@ -179,8 +190,9 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
                 }
             }
 
+            // Conver the cloud to a message and publish
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); 
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster1_surface_pub->publish(top_of_object_msg);
@@ -194,9 +206,11 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
             pcl::fromROSMsg(*msg,*cloud);
 
-            // implement plane detection here
+            // Implement plane detection using RANSAC (Random Sample Consensus)
             pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
             pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+            
+            // Set up the segmentation object for plane detection
             pcl::SACSegmentation<pcl::PointXYZ> seg;
             seg.setOptimizeCoefficients (true);
             seg.setModelType (pcl::SACMODEL_PLANE);
@@ -204,17 +218,20 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             seg.setDistanceThreshold (0.001);
             seg.setInputCloud (cloud);
             seg.segment (*inliers, *coefficients);
+            
+            // If no plane was detected, log an error and return
             if (inliers->indices.size () == 0)
             {
                 PCL_ERROR ("Could not estimate a planar model for the given dataset.\n");
                 return;
             }
+
+            // Create a new point cloud to store the points not belonging to the detected plane (i.e., the objects)
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
             
-            // Step 2: Filter points 3 mm below the top plane
-
+            // Filter points 3 mm below the top plane
             // Extract plane coefficients (a, b, c, d) from the detected plane
             float a = coefficients->values[0];
             float b = coefficients->values[1];
@@ -239,14 +256,15 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
                 }
             }
 
+            // Conver the cloud to a message and publish
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); 
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster2_surface_pub->publish(top_of_object_msg);
-
-
         }
+
+        // Setup subscribers and publishers
 
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cluster0_sub;
         rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr cluster1_sub;
@@ -264,8 +282,12 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
 
 int main(int argc, char * argv[])
 {
+  // Initialize the ROS2 system    
   rclcpp::init(argc, argv);
+  // Create an instance of the Denoise node and start spinning to process callbacks  
   rclcpp::spin(std::make_shared<PlanarSurfaceMultipleObjects>());
+  
+  // Shutdown the ROS2 system when the node is done
   rclcpp::shutdown();
   return 0;
 }
