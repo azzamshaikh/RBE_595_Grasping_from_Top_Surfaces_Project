@@ -134,9 +134,10 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             cluster0_top_pub->publish(top_of_object_msg);
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ConvexHull<pcl::PointXYZ> chull;
+            pcl::ConcaveHull<pcl::PointXYZ> chull;
             chull.setInputCloud(filtered_cloud);
-            chull.setComputeAreaVolume(false);
+            chull.setAlpha (0.1);
+            //chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
             // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
@@ -221,9 +222,10 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             cluster1_top_pub->publish(top_of_object_msg);
 
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ConvexHull<pcl::PointXYZ> chull;
+            pcl::ConcaveHull<pcl::PointXYZ> chull;
             chull.setInputCloud(filtered_cloud);
-            chull.setComputeAreaVolume(false);
+            chull.setAlpha (0.1);
+            //chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
             // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
@@ -311,9 +313,10 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
 
         
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ConvexHull<pcl::PointXYZ> chull;
+            pcl::ConcaveHull<pcl::PointXYZ> chull;
             chull.setInputCloud(filtered_cloud);
-            chull.setComputeAreaVolume(false);
+            chull.setAlpha (0.1);
+            //chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
             // Convert denoised PLC point cloud abck to sensor_msgs::PointCloud2
