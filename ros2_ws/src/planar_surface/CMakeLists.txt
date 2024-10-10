@@ -34,8 +34,11 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(planar_surface src/planar_surface.cpp)
 target_link_libraries(planar_surface ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
 
-add_executable(planar_surface_multiple_objects src/planar_surface_multiple_objects.cpp)
-target_link_libraries(planar_surface_multiple_objects ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
+add_executable(planar_surface_alphashape src/planar_surface_alphashape.cpp)
+target_link_libraries(planar_surface_alphashape ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
+
+add_executable(planar_surface_pcl src/planar_surface_pcl.cpp)
+target_link_libraries(planar_surface_pcl ${PCL_LIBRARIES} ${tf2_ros_LIBRARIES} ${tf2_eigen_LIBRARIES})
 
 
 ament_target_dependencies(
@@ -49,7 +52,18 @@ ament_target_dependencies(
 )
 
 ament_target_dependencies(
-  planar_surface_multiple_objects
+  planar_surface_alphashape
+  rclcpp
+  std_msgs
+  sensor_msgs
+  pcl_conversions
+  tf2_ros
+  tf2_eigen  
+  clustering_itf
+)
+
+ament_target_dependencies(
+  planar_surface_pcl
   rclcpp
   std_msgs
   sensor_msgs
@@ -62,7 +76,8 @@ ament_target_dependencies(
 # Install the executables
 install(TARGETS
   planar_surface
-  planar_surface_multiple_objects
+  planar_surface_alphashape
+  planar_surface_pcl
   DESTINATION lib/${PROJECT_NAME}
 )
 
