@@ -87,29 +87,55 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
+
+
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    // Move the point to the height of the top plane
+                    pcl::PointXYZ new_point = point;
+
+                    // Calculate the distance from the point to the top plane
+                    float top_plane_distance = a * point.x + b * point.y + c * point.z + d;
+
+                    // Project the point onto the top plane by adjusting the z-value
+                    new_point.x = point.x - a * top_plane_distance;
+                    new_point.y = point.y - b * top_plane_distance;
+                    new_point.z = point.z - c * top_plane_distance;
+
+                    filtered_cloud->points.push_back(new_point);
+                    
+                }
+            }
+
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*top_of_object, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster0_top_pub->publish(top_of_object_msg);
 
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ProjectInliers<pcl::PointXYZ> proj;
-            proj.setModelType(pcl::SACMODEL_PLANE);
-            proj.setInputCloud(top_of_object);
-            proj.setModelCoefficients(coefficients);
-            proj.filter(*cloud_projected);
-            float max_z = coefficients->values[3];
-            float z_threshold = 0.00001;
-            pcl::PointCloud<pcl::PointXYZ>::Ptr top_surface_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-            for (const auto& point : cloud_projected->points){
-                if(point.z >= (max_z - z_threshold)){
-                    top_surface_cloud->push_back(point);
-                }
-            }
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
             pcl::ConvexHull<pcl::PointXYZ> chull;
-            chull.setInputCloud(top_surface_cloud);
+            chull.setInputCloud(filtered_cloud);
             chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
@@ -147,29 +173,56 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
+            
+
+
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    // Move the point to the height of the top plane
+                    pcl::PointXYZ new_point = point;
+
+                    // Calculate the distance from the point to the top plane
+                    float top_plane_distance = a * point.x + b * point.y + c * point.z + d;
+
+                    // Project the point onto the top plane by adjusting the z-value
+                    new_point.x = point.x - a * top_plane_distance;
+                    new_point.y = point.y - b * top_plane_distance;
+                    new_point.z = point.z - c * top_plane_distance;
+
+                    filtered_cloud->points.push_back(new_point);
+                    
+                }
+            }
+
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*top_of_object, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster1_top_pub->publish(top_of_object_msg);
 
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ProjectInliers<pcl::PointXYZ> proj;
-            proj.setModelType(pcl::SACMODEL_PLANE);
-            proj.setInputCloud(top_of_object);
-            proj.setModelCoefficients(coefficients);
-            proj.filter(*cloud_projected);
-            float max_z = coefficients->values[3];
-            float z_threshold = 0.00001;
-            pcl::PointCloud<pcl::PointXYZ>::Ptr top_surface_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-            for (const auto& point : cloud_projected->points){
-                if(point.z >= (max_z - z_threshold)){
-                    top_surface_cloud->push_back(point);
-                }
-            }
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
             pcl::ConvexHull<pcl::PointXYZ> chull;
-            chull.setInputCloud(top_surface_cloud);
+            chull.setInputCloud(filtered_cloud);
             chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
@@ -207,29 +260,59 @@ class PlanarSurfaceMultipleObjects : public rclcpp::Node
             pcl::PointCloud<pcl::PointXYZ>::Ptr top_of_object(new pcl::PointCloud<pcl::PointXYZ>);
             for (size_t i = 0; i < inliers->indices.size (); ++i)
                 top_of_object->push_back(cloud->points[inliers->indices[i]]);
+            
+                        
+
+
+            // Step 2: Filter points 3 mm below the top plane
+
+            // Extract plane coefficients (a, b, c, d) from the detected plane
+            float a = coefficients->values[0];
+            float b = coefficients->values[1];
+            float c = coefficients->values[2];
+            float d = coefficients->values[3];
+
+            // Calculate the offset for the new plane (3 mm below)
+            float offset = 0.003 * sqrt(a * a + b * b + c * c);
+            float d_new = d - offset;
+
+            // Create a new point cloud for the filtered points
+            pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+            // Iterate through the original point cloud and filter points below the new plane
+            for (const auto& point : cloud->points)
+            {
+                float plane_distance = a * point.x + b * point.y + c * point.z + d_new;
+
+                if (plane_distance <= 0) // Points below or on the new plane
+                {
+                    // Move the point to the height of the top plane
+                    pcl::PointXYZ new_point = point;
+
+                    // Calculate the distance from the point to the top plane
+                    float top_plane_distance = a * point.x + b * point.y + c * point.z + d;
+
+                    // Project the point onto the top plane by adjusting the z-value
+                    new_point.x = point.x - a * top_plane_distance;
+                    new_point.y = point.y - b * top_plane_distance;
+                    new_point.z = point.z - c * top_plane_distance;
+
+                    filtered_cloud->points.push_back(new_point);
+                    
+                }
+            }
+            
+            
             sensor_msgs::msg::PointCloud2 top_of_object_msg;
-            pcl::toROSMsg(*top_of_object, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
+            pcl::toROSMsg(*filtered_cloud, top_of_object_msg); // make sure to change the reference input cloud that is being called here to the correct one that is output to ros
             top_of_object_msg.header.frame_id = "world";
             top_of_object_msg.header.stamp = this->get_clock()->now();
             cluster2_top_pub->publish(top_of_object_msg);
 
-            pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ>);
-            pcl::ProjectInliers<pcl::PointXYZ> proj;
-            proj.setModelType(pcl::SACMODEL_PLANE);
-            proj.setInputCloud(top_of_object);
-            proj.setModelCoefficients(coefficients);
-            proj.filter(*cloud_projected);
-            float max_z = coefficients->values[3];
-            float z_threshold = 0.00001;
-            pcl::PointCloud<pcl::PointXYZ>::Ptr top_surface_cloud (new pcl::PointCloud<pcl::PointXYZ>);
-            for (const auto& point : cloud_projected->points){
-                if(point.z >= (max_z - z_threshold)){
-                    top_surface_cloud->push_back(point);
-                }
-            }
+        
             pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ>);
             pcl::ConvexHull<pcl::PointXYZ> chull;
-            chull.setInputCloud(top_surface_cloud);
+            chull.setInputCloud(filtered_cloud);
             chull.setComputeAreaVolume(false);
             chull.reconstruct(*cloud_hull);
 
