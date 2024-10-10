@@ -12,6 +12,11 @@ import time
 import alphashape
 from shapely.geometry import Polygon, Point, LineString
 from shapely.ops import nearest_points
+import logging
+
+# Set the logging level to ERROR or higher to suppress warnings
+logging.getLogger().setLevel(logging.ERROR)
+
 
 class PlanarGrasp(Node):
 
@@ -52,86 +57,68 @@ class PlanarGrasp(Node):
 
 
     def cluster0_grasp_callback(self, msg):
-        x, y = self.pointcloud_to_x_and_y(msg)
-        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        x, y, z = self.pointcloud_to_x_and_y(msg)
         z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
-        GP1[2] = z_mean
-        GP2[2] = z_mean
-        #stack the gp1, gp2, com vertically
-        points = np.zeros((3,3), dtype=np.float32)
-        points[0] = GP1
-        points[1] = GP2
-        points[2] = [com.x, com.y, z_mean]
 
-        normals = np.array([GP1[2], GP2[2]])
-        points = points.flatten().tolist()
-        points = np.array(points, dtype=np.float32)
-        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
-        # self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
-
-        #publish the angle
+        # angles
         angle = Float32MultiArray()
-        angle.data = normals
-        angle.layout.data_offset = 2
+        angle.data = np.array([GP1[2], GP2[2]], dtype=np.float32).tolist()
+
+        # grasping point cloud
+        center_of_mass = np.array([com.x, com.y, z_mean], dtype=np.float32)
+        grasp_point_1 = np.array([GP1[0], GP1[1], z_mean], dtype=np.float32)
+        grasp_point_2 = np.array([GP2[0], GP2[1], z_mean], dtype=np.float32)
+        data = np.row_stack((center_of_mass,grasp_point_1,grasp_point_2))
+
+        cloud = self.to_pointcloud_msg(data) # make sure to convert the data to a cloud
+        self.cluster0_grasp_pub_.publish(cloud) #update to publish the cloud 
         self.cluster0_angle_pub.publish(angle)
 
 
     def cluster1_grasp_callback(self, msg):
-        x, y = self.pointcloud_to_x_and_y(msg)
-        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        x, y, z = self.pointcloud_to_x_and_y(msg)
         z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
-        GP1[2] = z_mean
-        GP2[2] = z_mean
-        #stack the gp1, gp2, com vertically
-        points = np.zeros((3,3), dtype=np.float32)
-        points[0] = GP1
-        points[1] = GP2
-        points[2] = com
 
-        normals = np.array([GP1[2], GP2[2]])
-        points = points.flatten().tolist()
-        points = np.array(points, dtype=np.float32)
-        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
-        self.cluster1_grasp_pub_.publish(msg)
-
+        # angles
         angle = Float32MultiArray()
-        angle.data = normals
-        angle.layout.data_offset = 2
-        self.cluster1_angle_pub.publish(angle)
+        angle.data = np.array([GP1[2], GP2[2]], dtype=np.float32).tolist()
 
+        # grasping point cloud
+        center_of_mass = np.array([com.x, com.y, z_mean], dtype=np.float32)
+        grasp_point_1 = np.array([GP1[0], GP1[1], z_mean], dtype=np.float32)
+        grasp_point_2 = np.array([GP2[0], GP2[1], z_mean], dtype=np.float32)
+        data = np.row_stack((center_of_mass,grasp_point_1,grasp_point_2))
+
+        cloud = self.to_pointcloud_msg(data) # make sure to convert the data to a cloud
+        self.cluster1_grasp_pub_.publish(cloud) #update to publish the cloud 
+        self.cluster1_angle_pub.publish(angle)
+        
 
     def cluster2_grasp_callback(self, msg):
-        x, y = self.pointcloud_to_x_and_y(msg)
-        z = ros2_numpy.point_cloud2.point_cloud2_to_array(msg)['xyz'][:,2]
+        x, y, z = self.pointcloud_to_x_and_y(msg)
         z_mean = np.mean(z)
         # add implementation here
         points = np.array([x, y]).T
         GP1, GP2, com = compute_grasp_points(points)
-        GP1[2] = z_mean
-        GP2[2] = z_mean
-        #stack the gp1, gp2, com vertically
-        points = np.zeros((3,3), dtype=np.float32)
-        points[0] = GP1
-        points[1] = GP2
-        points[2] = com
-        self.get_logger().info(f"GP1: {GP1}, GP2: {GP2}, COM: {com}")
-        normals = np.array([GP1[2], GP2[2]])
 
-        points = points.flatten().tolist()
-        points = np.array(points, dtype=np.float32)
-        cloud = self.to_pointcloud_msg(points) # make sure to convert the data to a cloud
-        
-        self.cluster2_grasp_pub_.publish(cloud)
-
+        # angles
         angle = Float32MultiArray()
-        angle.data = normals
-        angle.layout.data_offset = 2
+        angle.data = np.array([GP1[2], GP2[2]], dtype=np.float32).tolist()
+
+        # grasping point cloud
+        center_of_mass = np.array([com.x, com.y, z_mean], dtype=np.float32)
+        grasp_point_1 = np.array([GP1[0], GP1[1], z_mean], dtype=np.float32)
+        grasp_point_2 = np.array([GP2[0], GP2[1], z_mean], dtype=np.float32)
+        data = np.row_stack((center_of_mass,grasp_point_1,grasp_point_2))
+
+        cloud = self.to_pointcloud_msg(data) # make sure to convert the data to a cloud
+        self.cluster2_grasp_pub_.publish(cloud) #update to publish the cloud 
         self.cluster2_angle_pub.publish(angle)
 
     @staticmethod
@@ -140,7 +127,7 @@ class PlanarGrasp(Node):
         x = xyz[:,0]
         y = xyz[:,1]
         z = xyz[:,2]
-        return x, y 
+        return x, y, z
     
     def to_pointcloud_msg(self, data: npt.NDArray[np.float32]):
         cloud = PointCloud2()
@@ -155,7 +142,7 @@ class PlanarGrasp(Node):
         
         # Reshape the data to ensure it's in the correct format (3 points, with x, y, z)
         # assert data.shape == (3, 3), "Data should have shape (3, 3) for GP1, GP2, COM"
-        self.get_logger().info(f"Data: {data}")
+        # self.get_logger().info(f"Data: {data}")
         # Convert the data to a byte stream, maintaining point structure
         cloud.data = data.tobytes()
 

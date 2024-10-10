@@ -64,7 +64,11 @@ def generate_launch_description():
         output = "screen"
     )
 
-
+    planar_grasp = Node(
+        package="planar_grasp",
+        executable="planar_grasp_multiple_objects",
+        output = "log"
+    )
 
     rviz_file = os.path.join(
         get_package_share_directory('vbm_project_env'),
@@ -88,6 +92,7 @@ def generate_launch_description():
         object_point_cloud,
         clustering_clouds,
         planar_surface,
+        planar_grasp,
         rviz_node
     ]
 
