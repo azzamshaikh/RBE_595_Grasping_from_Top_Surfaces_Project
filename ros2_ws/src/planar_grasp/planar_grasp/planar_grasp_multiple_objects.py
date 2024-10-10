@@ -2,6 +2,7 @@ import rclpy
 from rclpy.node import Node
 
 from sensor_msgs.msg import PointCloud2, PointField
+from std_msgs.msg import Float32MultiArray
 import ros2_numpy
 import numpy as np
 import numpy.typing as npt
@@ -38,6 +39,9 @@ class PlanarGrasp(Node):
         self.cluster0_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_0_grasp', 10)
         self.cluster1_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_1_grasp', 10)
         self.cluster2_grasp_pub_ = self.create_publisher(PointCloud2, 'cluster_2_grasp', 10)
+        self.cluster0_angle_pub = self.create_publisher(Float32MultiArray, 'cluster_0_angle', 10)
+        self.cluster1_angle_pub = self.create_publisher(Float32MultiArray, 'cluster_1_angle', 10)
+        self.cluster2_angle_pub = self.create_publisher(Float32MultiArray, 'cluster_2_angle', 10)
     
     def wait_for_topic(self, topic_name):
         self.get_logger().info(f"Waiting for topic {topic_name}...")
@@ -51,31 +55,70 @@ class PlanarGrasp(Node):
         x, y = self.pointcloud_to_x_and_y(msg)
 
         # add implementation here
-        # points = np.array([x, y]).T
-        # GP1, GP2 = compute_grasp_points(points)
+        points = np.array([x, y]).T
+        GP1, GP2, com = compute_grasp_points(points)
 
-        # normals = np.array([GP1[2], GP2[2]])
-        # msg 
+        normals = np.array([GP1[2], GP2[2]])
+        #convert to numpy float32
+        GP1 = np.array(GP1, dtype=np.float32)
+        GP2 = np.array(GP2, dtype=np.float32)
+        
+        cloud_GP1 = self.to_pointcloud_msg(GP1)
+        cloud_GP2 = self.to_pointcloud_msg(GP2)
+        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
+
         #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
         self.cluster0_grasp_pub_.publish(msg) #update to publish the cloud 
-    
+
+        #publish the angle
+        angle = Float32MultiArray()
+        angle.data = normals
+        angle.layout.data_offset = 2
+        self.cluster0_angle_pub.publish(angle)
+
 
     def cluster1_grasp_callback(self, msg):
         x, y = self.pointcloud_to_x_and_y(msg)
 
         # add implementation here
+        points = np.array([x, y]).T
+        GP1, GP2, com = compute_grasp_points(points)
+        
+        cloud_GP1 = self.to_pointcloud_msg(GP1)
+        cloud_GP2 = self.to_pointcloud_msg(GP2)
+        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
+
+        normals = np.array([GP1[2], GP2[2]])
 
         #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
         self.cluster1_grasp_pub_.publish(msg)
+
+        angle = Float32MultiArray()
+        angle.data = normals
+        angle.layout.data_offset = 2
+        self.cluster1_angle_pub.publish(angle)
 
 
     def cluster2_grasp_callback(self, msg):
         x, y = self.pointcloud_to_x_and_y(msg)
         
         # add implementation here
+        points = np.array([x, y]).T
+        GP1, GP2, com = compute_grasp_points(points)
+        
+        cloud_GP1 = self.to_pointcloud_msg(GP1)
+        cloud_GP2 = self.to_pointcloud_msg(GP2)
+        cloud_com = self.to_pointcloud_msg(np.array([com], dtype=np.float32))
+
+        normals = np.array([GP1[2], GP2[2]])
 
         #cloud = self.to_pointcloud_msg() # make sure to convert the data to a cloud
         self.cluster2_grasp_pub_.publish(msg)
+
+        angle = Float32MultiArray()
+        angle.data = normals
+        angle.layout.data_offset = 2
+        self.cluster2_angle_pub.publish(angle)
 
     @staticmethod
     def pointcloud_to_x_and_y(msg):
@@ -154,7 +197,7 @@ def compute_grasp_points(points, alpha=0.01):
         closest_normal_orientation = np.arctan2(closest_normal[1], closest_normal[0])
         opposite_normal_orientation = np.arctan2(opposite_normal[1], opposite_normal[0])
 
-        return [closest_point.x, closest_point.y, closest_normal_orientation], [opposite_point.x, opposite_point.y, opposite_normal_orientation]
+        return [closest_point.x, closest_point.y, closest_normal_orientation], [opposite_point.x, opposite_point.y, opposite_normal_orientation], com
 
 def main(args=None):
     rclpy.init(args=args)
