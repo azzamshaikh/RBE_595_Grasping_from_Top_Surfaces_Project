@@ -57,9 +57,12 @@ def vector_angle_between_points(p1, p2):
 
 
 def main(args=None):
-    # Example usage:
-    p1 = (0.002298788886335888, 0.49688825522793273, -179.8161212539945)  # (x1, y1, theta1)
-    p2 = (0.9983957862238022, 0.5000850298796488, 0.1806434)  # (x2, y2, theta2)
+    # Example usage: (x, y, theta [deg]) <--degrees for now to debug
+    # p1 = (0.002298788886335888, 0.49688825522793273, -179.8161212539945)  # (x1, y1, theta1)
+    # p2 = (0.9983957862238022, 0.5000850298796488, 0.1806434)  # (x2, y2, theta2)
+    
+    p1 = (0,0,0)  # angle should be 0 deg. Instead, got 90.
+    p2 = (0,10,180) # angle should be 0 deg. Instead, got 143.2403...
 
     angles = vector_angle_between_points(p1, p2)
     print("Angles between the vectors and the intersecting line:", angles)
