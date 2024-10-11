@@ -1,5 +1,7 @@
-# RBE 595 Group Project
-This repo contains a ROS project developed for the RBE 550 group project.
+# RBE 595 - Vision-based Robotic Manipulation <br> <br> Grasping from Top Surfaces
+This repo contains a ROS2 and Gazebo project developed for the RBE 595 group project.
+
+### Abstract
 
 In this repo, the development of a top-surface grasping algorithm was explored. This is a key task in robotic manipulation that enhances a robot’s ability to interact with objects in cluttered or constrained environments. Utilizing the work of Richtsfeld and Vincze as reference, point cloud data techniques were implemented, focusing on surface normal estimation and grasp point detection. Two implementations utilizing concave hulls approaches from different libraries were evaluated, yielding consistent results in grasp point identification and quality metrics. The challenges and future work are proposed to improve the grasping pipeline.
 
@@ -18,7 +20,12 @@ Go to the `ros2_ws` folder:
 cd ros2_ws
 ```
 
-Build the workspace. The `--parallel-workers NUMBER` argument can be passed to the `colcon build` command to prevent any crashes. 
+Check for missing dependencies:
+```
+rosdep install -i --from-path src --rosdistro humble -y
+```
+
+Build the workspace and source the environment. The `--parallel-workers NUMBER` argument can be passed to the `colcon build` command to prevent any crashes. 
 ```
 colcon build && source install/setup.bash
 ```
