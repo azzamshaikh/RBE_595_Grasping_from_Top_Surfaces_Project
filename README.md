@@ -1,40 +1,37 @@
 # RBE 595 Group Project
 This repo contains a ROS project developed for the RBE 550 group project.
 
-## Getting the repo
-Ensure that you have git access setup with your laptop.
+In this repo, the development of a top-surface grasping algorithm was explored. This is a key task in robotic manipulation that enhances a robot’s ability to interact with objects in cluttered or constrained environments. Utilizing the work of Richtsfeld and Vincze as reference, point cloud data techniques were implemented, focusing on surface normal estimation and grasp point detection. Two implementations utilizing concave hulls approaches from different libraries were evaluated, yielding consistent results in grasp point identification and quality metrics. The challenges and future work are proposed to improve the grasping pipeline.
 
-If you are using HTTPS:
-```
-git clone https://github.com/azzamshaikh/RBE-595-Group-Project.git
-```
+![](./docs/media/gp_pcl.png)
 
-If you are using SSH:
-```
-git clone git@github.com:azzamshaikh/RBE-595-Group-Project.git
-```
+A full write up of the project can be seen in the `docs` folder.
+
+## Team Members
+
+Azzam Shaikh, Niranjan Kumar Ilampooranan, Swati Shirke, Alex Brattstrom, Chaitanya Gokule
 
 ## Run Instructions
 
-Go to the `ros2_ws` folder
+Go to the `ros2_ws` folder:
 ```
 cd ros2_ws
 ```
 
-Build the workspace
+Build the workspace. The `--parallel-workers NUMBER` argument can be passed to the `colcon build` command to prevent any crashes. 
 ```
 colcon build && source install/setup.bash
 ```
 
 ### Launching the simulation
-Use the following command to launch the sim with 1 object
+Use the following command to launch the sim using the PCL implementation.
 ```
-ros2 launch vbm_project_env simulation.launch.py
+ros2 launch vbm_project_env simulation_pcl.launch.py
 ```
 
-Use the following command to launch the sim with 3 objects
+Use the following command to launch the sim using the alphashape implementation.
 ```
-ros2 launch vbm_project_env simulation_multiple_objects.launch.py
+ros2 launch vbm_project_env simulation_alphashape.launch.py
 ```
 
 
