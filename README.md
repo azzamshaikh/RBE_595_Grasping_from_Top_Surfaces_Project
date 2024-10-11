@@ -1,4 +1,6 @@
-# RBE 595 - Vision-based Robotic Manipulation <br> <br> Grasping from Top Surfaces
+# RBE 595 - Vision-based Robotic Manipulation
+
+## Grasping from Top Surfaces
 This repo contains a ROS2 and Gazebo project developed for the RBE 595 group project.
 
 ### Abstract
@@ -14,7 +16,7 @@ A full write up of the project can be seen in the `docs` folder.
 Azzam Shaikh, Niranjan Kumar Ilampooranan, Swati Shirke, Alex Brattstrom, Chaitanya Gokule
 
 ## Run Instructions
-
+### Building the workspace
 Go to the `ros2_ws` folder:
 ```
 cd ros2_ws
