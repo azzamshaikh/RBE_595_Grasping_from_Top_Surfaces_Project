@@ -19,26 +19,26 @@ def calculate_angle(p1, p2, doSwitch=False):
 # def normalize_vector(vector, theta):
 #     return vector / np.linalg.norm(vector), theta
 
-def normalize_vector(x, y, theta):
-    """Normalizes a vector given its x, y components, and angle.
+# def normalize_vector(x, y, theta):
+#     """Normalizes a vector given its x, y components, and angle.
 
-    Args:
-        x: The x component of the vector.
-        y: The y component of the vector.
-        theta: The angle of the vector in radians.
+#     Args:
+#         x: The x component of the vector.
+#         y: The y component of the vector.
+#         theta: The angle of the vector in radians.
 
-    Returns:
-        A tuple containing the normalized x, y components, and angle.
-    """
+#     Returns:
+#         A tuple containing the normalized x, y components, and angle.
+#     """
 
-    magnitude = math.sqrt(x**2 + y**2)
-    normalized_x = x / magnitude
-    normalized_y = y / magnitude
+#     magnitude = math.sqrt(x**2 + y**2)
+#     normalized_x = x / magnitude
+#     normalized_y = y / magnitude
 
-    # Preserve the angle
-    normalized_theta = theta
+#     # Preserve the angle
+#     normalized_theta = theta
 
-    return normalized_x, normalized_y, normalized_theta
+#     return normalized_x, normalized_y, normalized_theta
 
 def constrain_angle(theta):
     if theta < 0:
@@ -63,10 +63,11 @@ def main(args=None):
     # Normalize vectors
     # p1 = normalize_vector(p1[:2],p1[2])
     # p2 = normalize_vector(p2[:2],p2[2])
-    p1 = normalize_vector(p1[0],p1[1],p1[2])
-    p2 = normalize_vector(p2[0],p2[1],p2[2])
-    print("p1 normalized:",p1)
-    print("p2 normalized:",p2)
+    
+    # p1 = normalize_vector(p1[0],p1[1],p1[2])
+    # p2 = normalize_vector(p2[0],p2[1],p2[2])
+    # print("p1 normalized:",p1)
+    # print("p2 normalized:",p2)
 
     # Calculate the angle of the vector between the points
     angle_between_points_1 = calculate_angle(p1[:2], p2[:2])
